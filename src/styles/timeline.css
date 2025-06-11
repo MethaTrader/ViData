@@ -1,0 +1,167 @@
+/* Стилі для таймлайн компонента */
+
+.timeline-container {
+  @apply bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl shadow-lg overflow-hidden;
+}
+
+.timeline-header {
+  @apply bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-4;
+}
+
+.timeline-content {
+  @apply p-6 bg-white;
+}
+
+.timeline-track {
+  @apply relative h-12 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg cursor-pointer overflow-hidden shadow-inner;
+  background-image: linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.1) 50%, transparent 50%, transparent 75%, rgba(255,255,255,0.1) 75%);
+  background-size: 20px 20px;
+}
+
+.timeline-progress {
+  @apply absolute top-0 left-0 h-full rounded-l-lg transition-all duration-100;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%);
+  box-shadow: 
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-progress::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.timeline-playhead {
+  @apply absolute top-0 w-1 h-full bg-blue-600 transform -translate-x-0.5;
+  box-shadow: 0 0 0 2px white, 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+.timeline-playhead-handle {
+  @apply absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-blue-600 rounded-full border-white shadow-lg;
+  box-shadow: 
+    0 0 0 3px white, 
+    0 2px 8px rgba(0,0,0,0.2),
+    0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.timeline-playhead-handle:hover {
+  @apply scale-110;
+  box-shadow: 
+    0 0 0 3px white, 
+    0 4px 12px rgba(0,0,0,0.3),
+    0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+.timeline-markers {
+  @apply relative mb-3 h-8;
+}
+
+.timeline-marker {
+  @apply absolute flex flex-col items-center text-xs text-gray-600;
+}
+
+.timeline-marker-line {
+  @apply w-px bg-gray-300;
+  height: 12px;
+}
+
+.timeline-marker-major .timeline-marker-line {
+  @apply bg-gray-500;
+  height: 16px;
+}
+
+.timeline-marker-text {
+  @apply mt-1 font-mono text-xs text-gray-500 select-none;
+}
+
+.timeline-controls {
+  @apply flex items-center justify-between mt-4 pt-4 border-t border-gray-100;
+}
+
+.timeline-zoom-controls {
+  @apply flex items-center space-x-2;
+}
+
+.timeline-zoom-btn {
+  @apply p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.timeline-zoom-btn:hover:not(:disabled) {
+  @apply transform scale-110;
+}
+
+.timeline-info {
+  @apply flex items-center space-x-4 text-sm text-gray-600;
+}
+
+.timeline-info-item {
+  @apply flex items-center space-x-1;
+}
+
+/* Стилі для слайдерів відео */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+  @apply bg-gray-300 rounded-full;
+  height: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.2),
+    0 0 0 1px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.3),
+    0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+input[type="range"]::-moz-range-track {
+  @apply bg-gray-300 rounded-full;
+  height: 4px;
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.2),
+    0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+/* Анімації */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
