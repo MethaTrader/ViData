@@ -147,7 +147,7 @@ pnpm-lock.yaml
 # pnpm-lock.yaml
 
 # Якщо використовуєте pnpm:
-# package-lock.json
+package-lock.json
 # yarn.lock
 
 # Project specific
