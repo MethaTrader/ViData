@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Plus, Upload, Image, Edit2, Trash2, CornerDownLeft, CornerDownRight, CornerUpLeft, CornerUpRight, Target } from 'lucide-react';
+import { Plus, Upload, Image, Edit2, Trash2, CornerDownLeft, CornerDownRight, CornerUpLeft, CornerUpRight, Target, Eye, EyeOff } from 'lucide-react';
 import { Watermark, WatermarkPosition } from '../types/video-types';
 import { formatTime, generateId, isValidImageFormat, isValidFileSize } from '../utils/video-utils';
 
@@ -13,6 +13,9 @@ interface WatermarkEditorProps {
     onDeleteWatermark: (id: string) => void;
     onSeek: (time: number) => void;
     onError: (error: string) => void;
+    onPreviewWatermark: (watermark: Partial<Watermark> & { file: File }) => void;
+    onClearPreview: () => void;
+    onUpdatePreviewPosition?: (position: { x: number; y: number }) => void;
 }
 
 // Позиції водяного знаку
@@ -35,19 +38,64 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
                                                                     onUpdateWatermark,
                                                                     onDeleteWatermark,
                                                                     onSeek,
-                                                                    onError
+                                                                    onError,
+                                                                    onPreviewWatermark,
+                                                                    onClearPreview,
+                                                                    onUpdatePreviewPosition
                                                                 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [isPreviewMode, setIsPreviewMode] = useState(true);
     const [formData, setFormData] = useState({
         position: 'top-right' as WatermarkPosition | 'custom',
-        scale: 0.3,
+        scale: 1.0, // За замовчуванням 100%
         startTime: currentTime,
         endTime: videoDuration,
-        customX: 85,
-        customY: 15
+        customX: 95, // 95% від лівого краю (5% відступ справа)
+        customY: 5   // 5% від верхнього краю
     });
+
+    // Автоматичне оновлення preview при зміні форми
+    useEffect(() => {
+        if (isAdding && isPreviewMode && uploadedFile) {
+            onPreviewWatermark({
+                file: uploadedFile,
+                position: formData.position,
+                scale: formData.scale,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                customX: formData.customX,
+                customY: formData.customY
+            });
+        } else if (!isAdding || !isPreviewMode) {
+            onClearPreview();
+        }
+    }, [formData, uploadedFile, isAdding, isPreviewMode, onPreviewWatermark, onClearPreview]);
+
+    // Функція для оновлення позиції від drag & drop
+    const updatePositionFromDrag = useCallback((position: { x: number; y: number }) => {
+        setFormData(prev => ({
+            ...prev,
+            position: 'custom',
+            customX: Math.round(position.x),
+            customY: Math.round(position.y)
+        }));
+    }, []);
+
+    // Викликаємо callback для передачі функції батьківському компоненту
+    React.useEffect(() => {
+        if (onUpdatePreviewPosition && isAdding) {
+            onUpdatePreviewPosition(updatePositionFromDrag);
+        }
+    }, [onUpdatePreviewPosition, updatePositionFromDrag, isAdding]);
+
+    // Очищуємо preview при закритті форми
+    useEffect(() => {
+        if (!isAdding) {
+            onClearPreview();
+        }
+    }, [isAdding, onClearPreview]);
 
     // Обробка завантаження файлу
     const handleFileUpload = useCallback(async (file: File) => {
@@ -108,14 +156,15 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
         setUploadedFile(null);
         setFormData({
             position: 'top-right',
-            scale: 0.3,
+            scale: 1.0,
             startTime: currentTime,
             endTime: videoDuration,
-            customX: 85,
-            customY: 15
+            customX: 95,
+            customY: 5
         });
         setIsAdding(false);
-    }, [uploadedFile, formData, currentTime, videoDuration, onAddWatermark]);
+        onClearPreview();
+    }, [uploadedFile, formData, currentTime, videoDuration, onAddWatermark, onClearPreview]);
 
     // Обробка редагування
     const handleEdit = useCallback((watermark: Watermark) => {
@@ -124,8 +173,8 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
             scale: watermark.scale,
             startTime: watermark.startTime,
             endTime: watermark.endTime,
-            customX: watermark.customX || 85,
-            customY: watermark.customY || 15
+            customX: watermark.customX || 95,
+            customY: watermark.customY || 5
         });
         setEditingId(watermark.id);
         setIsAdding(true);
@@ -149,13 +198,14 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
         setUploadedFile(null);
         setFormData({
             position: 'top-right',
-            scale: 0.3,
+            scale: 1.0,
             startTime: currentTime,
             endTime: videoDuration,
-            customX: 85,
-            customY: 15
+            customX: 95,
+            customY: 5
         });
-    }, [editingId, formData, currentTime, videoDuration, onUpdateWatermark]);
+        onClearPreview();
+    }, [editingId, formData, currentTime, videoDuration, onUpdateWatermark, onClearPreview]);
 
     // Скасування
     const handleCancel = useCallback(() => {
@@ -164,13 +214,14 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
         setUploadedFile(null);
         setFormData({
             position: 'top-right',
-            scale: 0.3,
+            scale: 1.0,
             startTime: currentTime,
             endTime: videoDuration,
-            customX: 85,
-            customY: 15
+            customX: 95,
+            customY: 5
         });
-    }, [currentTime, videoDuration]);
+        onClearPreview();
+    }, [currentTime, videoDuration, onClearPreview]);
 
     return (
         <div className="card">
@@ -203,9 +254,21 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
                 {/* Форма додавання/редагування */}
                 {isAdding && (
                     <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                        <h4 className="font-medium text-gray-900">
-                            {editingId ? 'Редагувати водяний знак' : 'Новий водяний знак'}
-                        </h4>
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-gray-900">
+                                {editingId ? 'Редагувати водяний знак' : 'Новий водяний знак'}
+                            </h4>
+                            {/* Перемикач preview */}
+                            <button
+                                onClick={() => setIsPreviewMode(!isPreviewMode)}
+                                className={`flex items-center space-x-1 px-2 py-1 rounded text-xs ${
+                                    isPreviewMode ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
+                                }`}
+                            >
+                                {isPreviewMode ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                                <span>Preview</span>
+                            </button>
+                        </div>
 
                         {/* Завантаження зображення */}
                         {!editingId && (
@@ -251,9 +314,35 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
                                 {POSITION_OPTIONS.map(({ value, label, icon: Icon }) => (
                                     <button
                                         key={value}
-                                        onClick={() => setFormData(prev => ({ ...prev, position: value }))}
+                                        onClick={() => {
+                                            setFormData(prev => ({ ...prev, position: value }));
+                                            // Автоматично переключаємо на custom при виборі preset позицій
+                                            if (value !== 'custom') {
+                                                let newX = 50, newY = 50;
+                                                switch (value) {
+                                                    case 'top-left': newX = 10; newY = 10; break;
+                                                    case 'top-right': newX = 90; newY = 10; break;
+                                                    case 'bottom-left': newX = 10; newY = 90; break;
+                                                    case 'bottom-right': newX = 90; newY = 90; break;
+                                                    case 'center': newX = 50; newY = 50; break;
+                                                }
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    position: 'custom',
+                                                    customX: newX,
+                                                    customY: newY
+                                                }));
+                                            }
+                                        }}
                                         className={`p-3 rounded-lg border text-left transition-colors ${
-                                            formData.position === value
+                                            (formData.position === value ||
+                                                (formData.position === 'custom' && (
+                                                    (value === 'top-left' && formData.customX <= 20 && formData.customY <= 20) ||
+                                                    (value === 'top-right' && formData.customX >= 80 && formData.customY <= 20) ||
+                                                    (value === 'bottom-left' && formData.customX <= 20 && formData.customY >= 80) ||
+                                                    (value === 'bottom-right' && formData.customX >= 80 && formData.customY >= 80) ||
+                                                    (value === 'center' && formData.customX >= 40 && formData.customX <= 60 && formData.customY >= 40 && formData.customY <= 60)
+                                                )))
                                                 ? 'border-blue-500 bg-blue-50 text-blue-700'
                                                 : 'border-gray-300 hover:border-gray-400'
                                         }`}
@@ -263,47 +352,56 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
                                     </button>
                                 ))}
                             </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                                💡 Також можете перетягувати водяний знак мишкою на відео для точного позиціонування
+                            </p>
                         </div>
 
-                        {/* Власні координати */}
-                        {formData.position === 'custom' && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                                <label className="block text-sm font-medium text-green-800 mb-2">
-                                    Координати (у відсотках від країв відео)
-                                </label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs text-green-700 mb-1">
-                                            X (від лівого краю): {formData.customX}%
-                                        </label>
-                                        <input
-                                            type="range"
-                                            value={formData.customX}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, customX: parseInt(e.target.value) }))}
-                                            className="w-full"
-                                            min="0"
-                                            max="100"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-green-700 mb-1">
-                                            Y (від верхнього краю): {formData.customY}%
-                                        </label>
-                                        <input
-                                            type="range"
-                                            value={formData.customY}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, customY: parseInt(e.target.value) }))}
-                                            className="w-full"
-                                            min="0"
-                                            max="100"
-                                        />
-                                    </div>
+                        {/* Координати (завжди показуємо для drag & drop) */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <label className="block text-sm font-medium text-blue-800 mb-2">
+                                Точні координати (у відсотках)
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-blue-700 mb-1">
+                                        X (від лівого краю): {formData.customX}%
+                                    </label>
+                                    <input
+                                        type="range"
+                                        value={formData.customX}
+                                        onChange={(e) => setFormData(prev => ({
+                                            ...prev,
+                                            position: 'custom',
+                                            customX: parseInt(e.target.value)
+                                        }))}
+                                        className="w-full"
+                                        min="0"
+                                        max="100"
+                                    />
                                 </div>
-                                <p className="text-xs text-green-600 mt-2">
-                                    💡 0,0 = верхній лівий кут, 100,100 = нижній правий кут
-                                </p>
+                                <div>
+                                    <label className="block text-xs text-blue-700 mb-1">
+                                        Y (від верхнього краю): {formData.customY}%
+                                    </label>
+                                    <input
+                                        type="range"
+                                        value={formData.customY}
+                                        onChange={(e) => setFormData(prev => ({
+                                            ...prev,
+                                            position: 'custom',
+                                            customY: parseInt(e.target.value)
+                                        }))}
+                                        className="w-full"
+                                        min="0"
+                                        max="100"
+                                    />
+                                </div>
                             </div>
-                        )}
+                            <p className="text-xs text-blue-600 mt-2">
+                                💡 0,0 = верхній лівий кут, 100,100 = нижній правий кут
+                            </p>
+                        </div>
 
                         {/* Розмір */}
                         <div>
@@ -316,12 +414,12 @@ export const WatermarkEditor: React.FC<WatermarkEditorProps> = ({
                                 onChange={(e) => setFormData(prev => ({ ...prev, scale: parseFloat(e.target.value) }))}
                                 className="w-full"
                                 min="0.1"
-                                max="1"
+                                max="1.5"
                                 step="0.05"
                             />
                             <div className="flex justify-between text-xs text-gray-500 mt-1">
                                 <span>10%</span>
-                                <span>100%</span>
+                                <span>150%</span>
                             </div>
                         </div>
 

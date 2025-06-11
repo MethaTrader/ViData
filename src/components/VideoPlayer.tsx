@@ -9,6 +9,7 @@ interface VideoPlayerProps {
   video: VideoFile;
   timeline: TimelineState;
   subtitles: Subtitle[];
+  previewWatermark?: Partial<Watermark> & { file: File };
   watermarks: Watermark[];
   disclaimers: Disclaimer[];
   previewSubtitle?: Partial<Subtitle> & { text: string };
@@ -17,6 +18,8 @@ interface VideoPlayerProps {
   onPause: () => void;
   onSeek: (time: number) => void;
   onDurationChange: (duration: number) => void;
+  onUpdateWatermarkPosition?: (position: { x: number; y: number }) => void;
+  isEditingWatermark?: boolean;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -30,17 +33,94 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                                           onPlay,
                                                           onPause,
                                                           onSeek,
-                                                          onDurationChange
+                                                          previewWatermark,
+                                                          onDurationChange,
+                                                          onUpdateWatermarkPosition,
+                                                          isEditingWatermark = false,
                                                         }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [volume, setVolume] = React.useState(1);
   const [isMuted, setIsMuted] = React.useState(false);
   const [showingDisclaimer, setShowingDisclaimer] = useState<number>(-1);
   const [, setDisclaimerStartTime] = useState<number>(0);
 
+  // Стан для розрахунку масштабування
+  const [videoDisplaySize, setVideoDisplaySize] = useState({ width: 0, height: 0 });
+  const [scaleFactor, setScaleFactor] = useState(1);
+
   // Рахуємо загальну тривалість з дисклеймерами
   const totalDisclaimerDuration = disclaimers.reduce((sum, d) => sum + d.duration, 0);
   const totalDuration = video.duration + totalDisclaimerDuration;
+
+  // Функція для розрахунку актуальних розмірів відео в preview
+  const calculateVideoDisplaySize = useCallback(() => {
+    const videoElement = videoRef.current;
+    const containerElement = containerRef.current;
+
+    if (!videoElement || !containerElement) return;
+
+    const containerRect = containerElement.getBoundingClientRect();
+    const containerWidth = containerRect.width;
+    const containerHeight = containerRect.height;
+
+    // Розрахунок розмірів з урахуванням object-contain
+    const videoAspectRatio = video.width / video.height;
+    const containerAspectRatio = containerWidth / containerHeight;
+
+    let displayWidth, displayHeight;
+
+    if (videoAspectRatio > containerAspectRatio) {
+      // Відео ширше контейнера - масштабуємо по ширині
+      displayWidth = containerWidth;
+      displayHeight = containerWidth / videoAspectRatio;
+    } else {
+      // Відео вище контейнера - масштабуємо по висоті
+      displayHeight = containerHeight;
+      displayWidth = containerHeight * videoAspectRatio;
+    }
+
+    setVideoDisplaySize({ width: displayWidth, height: displayHeight });
+
+    // Розрахунок коефіцієнта масштабування
+    const scaleX = displayWidth / video.width;
+    const scaleY = displayHeight / video.height;
+    const scale = Math.min(scaleX, scaleY); // Використовуємо менший коефіцієнт для object-contain
+
+    setScaleFactor(scale);
+
+    console.log('Video scaling info:', {
+      original: { width: video.width, height: video.height },
+      container: { width: containerWidth, height: containerHeight },
+      display: { width: displayWidth, height: displayHeight },
+      scaleFactor: scale
+    });
+  }, [video.width, video.height]);
+
+  // Відстежуємо зміни розміру контейнера
+  useEffect(() => {
+    calculateVideoDisplaySize();
+
+    const resizeObserver = new ResizeObserver(calculateVideoDisplaySize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [calculateVideoDisplaySize]);
+
+  // Розрахунок після завантаження метаданих
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      const handleLoadedMetadata = () => {
+        setTimeout(calculateVideoDisplaySize, 100); // Невелика затримка для точності
+      };
+
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+      return () => videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    }
+  }, [calculateVideoDisplaySize]);
 
   // Синхронізація стану відтворення
   useEffect(() => {
@@ -146,7 +226,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   return (
       <div className="bg-black rounded-lg overflow-hidden shadow-lg">
         {/* Відео елемент */}
-        <div className="relative aspect-video bg-black">
+        <div
+            ref={containerRef}
+            className="relative aspect-video bg-black"
+        >
           <video
               ref={videoRef}
               src={video.url}
@@ -176,6 +259,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   currentTime={timeline.currentTime}
                   videoWidth={video.width}
                   videoHeight={video.height}
+                  scaleFactor={scaleFactor}
+                  displaySize={videoDisplaySize}
                   previewSubtitle={previewSubtitle}
               />
           )}
@@ -185,6 +270,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               <WatermarkOverlay
                   watermarks={watermarks}
                   currentTime={timeline.currentTime}
+                  scaleFactor={scaleFactor}
+                  displaySize={videoDisplaySize}
+                  previewWatermark={previewWatermark}
+                  onUpdateWatermarkPosition={onUpdateWatermarkPosition}
+                  isEditing={isEditingWatermark}
               />
           )}
 
@@ -197,6 +287,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 >
                   <Play className="h-8 w-8 text-gray-900 ml-1" />
                 </button>
+              </div>
+          )}
+
+          {/* Debug info (можна видалити в продакшені) */}
+          {process.env.NODE_ENV === 'development' && (
+              <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs p-2 rounded">
+                Scale: {scaleFactor.toFixed(3)} | Display: {Math.round(videoDisplaySize.width)}x{Math.round(videoDisplaySize.height)}
               </div>
           )}
         </div>

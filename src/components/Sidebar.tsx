@@ -14,6 +14,8 @@ interface SidebarProps {
     disclaimers: Disclaimer[];
     currentTime: number;
     videoDuration: number;
+    onPreviewWatermark: (watermark: Partial<Watermark> & { file: File }) => void;
+    onClearWatermarkPreview: () => void;
     onAddSubtitle: (subtitle: Subtitle) => void;
     onUpdateSubtitle: (id: string, subtitle: Partial<Subtitle>) => void;
     onDeleteSubtitle: (id: string) => void;
@@ -27,6 +29,8 @@ interface SidebarProps {
     onError: (error: string) => void;
     onPreviewSubtitle: (subtitle: Partial<Subtitle> & { text: string }) => void;
     onClearPreview: () => void;
+    onUpdateWatermarkPreviewPosition?: (updateFn: (position: { x: number; y: number }) => void) => void;
+    isEditingWatermark?: boolean;
 }
 
 type TabType = 'subtitles' | 'watermarks' | 'disclaimers' | 'info';
@@ -57,7 +61,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                     onSeek,
                                                     onError,
                                                     onPreviewSubtitle,
-                                                    onClearPreview
+                                                    onClearPreview,
+                                                    onPreviewWatermark,
+                                                    onClearWatermarkPreview,
+                                                    onUpdateWatermarkPreviewPosition,
+                                                    isEditingWatermark,
                                                 }) => {
     const [activeTab, setActiveTab] = useState<TabType>('subtitles');
 
@@ -89,6 +97,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onDeleteWatermark={onDeleteWatermark}
                         onSeek={onSeek}
                         onError={onError}
+                        onPreviewWatermark={onPreviewWatermark}
+                        onClearPreview={onClearWatermarkPreview}
+                        onUpdatePreviewPosition={onUpdateWatermarkPreviewPosition}
                     />
                 );
 

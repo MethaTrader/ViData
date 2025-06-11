@@ -52,6 +52,32 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showProjectLoader, setShowProjectLoader] = useState(false);
 
+  const [previewWatermark, setPreviewWatermark] = useState<(Partial<Watermark> & { file: File }) | null>(null);
+
+  const [watermarkPositionUpdater, setWatermarkPositionUpdater] = useState<((position: { x: number; y: number }) => void) | null>(null);
+
+
+// Preview функціонал для водяних знаків
+  const handlePreviewWatermark = useCallback((watermark: Partial<Watermark> & { file: File }) => {
+    setPreviewWatermark(watermark);
+  }, []);
+
+  const handleClearWatermarkPreview = useCallback(() => {
+    setPreviewWatermark(null);
+  }, []);
+
+  // Функція для встановлення updater функції від WatermarkEditor
+  const handleSetWatermarkPositionUpdater = useCallback((updateFn: (position: { x: number; y: number }) => void) => {
+    setWatermarkPositionUpdater(() => updateFn);
+  }, []);
+
+// Функція для оновлення позиції водяного знаку
+  const handleUpdateWatermarkPosition = useCallback((position: { x: number; y: number }) => {
+    if (watermarkPositionUpdater) {
+      watermarkPositionUpdater(position);
+    }
+  }, [watermarkPositionUpdater]);
+
   // Стан експорту
   const [showExportModal, setShowExportModal] = useState(false);
 
@@ -449,6 +475,10 @@ function App() {
                     onError={handleError}
                     onPreviewSubtitle={handlePreviewSubtitle}
                     onClearPreview={handleClearPreview}
+                    onPreviewWatermark={handlePreviewWatermark}
+                    onClearWatermarkPreview={handleClearWatermarkPreview}
+                    onUpdateWatermarkPreviewPosition={handleSetWatermarkPositionUpdater}
+                    isEditingWatermark={!!previewWatermark}
                 />
 
                 {/* Відеоплеєр праворуч */}
@@ -462,11 +492,14 @@ function App() {
                           watermarks={project.watermarks}
                           disclaimers={project.disclaimers}
                           previewSubtitle={previewSubtitle}
+                          previewWatermark={previewWatermark}
                           onTimeUpdate={handleTimeUpdate}
                           onPlay={handlePlay}
                           onPause={handlePause}
                           onSeek={handleSeek}
                           onDurationChange={handleDurationChange}
+                          onUpdateWatermarkPosition={handleUpdateWatermarkPosition}
+                          isEditingWatermark={!!previewWatermark}
                       />
                     </div>
                   </div>

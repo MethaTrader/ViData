@@ -5,15 +5,15 @@
  */
 export const formatTime = (seconds: number): string => {
   if (isNaN(seconds) || seconds < 0) return '00:00';
-  
+
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
-  
+
   if (hours > 0) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
-  
+
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
@@ -62,23 +62,23 @@ export const getVideoMetadata = (file: File): Promise<{
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     const url = createFileURL(file);
-    
+
     video.addEventListener('loadedmetadata', () => {
       const metadata = {
         duration: video.duration,
         width: video.videoWidth,
         height: video.videoHeight
       };
-      
+
       revokeFileURL(url);
       resolve(metadata);
     });
-    
+
     video.addEventListener('error', () => {
       revokeFileURL(url);
       reject(new Error('Не вдалося завантажити метадані відео'));
     });
-    
+
     video.src = url;
   });
 };
@@ -122,4 +122,65 @@ export const formatFileSize = (bytes: number): string => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+/**
+ * Розраховує scale factor для відображення відео
+ */
+export const calculateVideoScaleFactor = (
+    videoWidth: number,
+    videoHeight: number,
+    containerWidth: number,
+    containerHeight: number
+): { scaleFactor: number; displayWidth: number; displayHeight: number } => {
+  const videoAspectRatio = videoWidth / videoHeight;
+  const containerAspectRatio = containerWidth / containerHeight;
+
+  let displayWidth, displayHeight;
+
+  if (videoAspectRatio > containerAspectRatio) {
+    // Відео ширше контейнера - масштабуємо по ширині
+    displayWidth = containerWidth;
+    displayHeight = containerWidth / videoAspectRatio;
+  } else {
+    // Відео вище контейнера - масштабуємо по висоті
+    displayHeight = containerHeight;
+    displayWidth = containerHeight * videoAspectRatio;
+  }
+
+  const scaleFactor = Math.min(displayWidth / videoWidth, displayHeight / videoHeight);
+
+  return {
+    scaleFactor,
+    displayWidth,
+    displayHeight
+  };
+};
+
+/**
+ * Конвертує координати з preview в оригінальні координати відео
+ */
+export const convertPreviewToVideoCoordinates = (
+    previewX: number,
+    previewY: number,
+    scaleFactor: number
+): { x: number; y: number } => {
+  return {
+    x: previewX / scaleFactor,
+    y: previewY / scaleFactor
+  };
+};
+
+/**
+ * Конвертує координати з оригінальних в preview координати
+ */
+export const convertVideoToPreviewCoordinates = (
+    videoX: number,
+    videoY: number,
+    scaleFactor: number
+): { x: number; y: number } => {
+  return {
+    x: videoX * scaleFactor,
+    y: videoY * scaleFactor
+  };
 };
