@@ -39,3 +39,39 @@
     @apply px-6 py-4;
   }
 }
+
+/* Стилі для компактного sidebar */
+.sidebar-card {
+  @apply bg-white rounded-lg border border-gray-200 shadow-sm;
+}
+
+.sidebar-card-header {
+  @apply px-4 py-3 border-b border-gray-200;
+}
+
+.sidebar-card-content {
+  @apply px-4 py-3;
+}
+
+/* Компактні форми в sidebar */
+.compact-form {
+  @apply space-y-3;
+}
+
+.compact-form .input-field {
+  @apply text-sm py-2;
+}
+
+.compact-form .btn-primary,
+.compact-form .btn-secondary {
+  @apply text-sm px-4 py-2;
+}
+
+/* Стилі для невеликих карток елементів */
+.element-card {
+  @apply bg-gray-50 rounded-lg p-3 border border-gray-200;
+}
+
+.element-card-compact {
+  @apply bg-gray-50 rounded-lg p-2 border border-gray-200;
+}

@@ -165,3 +165,90 @@ input[type="range"]::-moz-range-thumb {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Стилі для доріжок елементів */
+.tracks-container {
+  @apply border-t border-gray-200 pt-4;
+}
+
+.track {
+  @apply mb-3;
+}
+
+.track-header {
+  @apply flex items-center space-x-2 mb-2 px-1;
+}
+
+.track-content {
+  @apply relative h-8 bg-gray-100 rounded border border-gray-200 overflow-hidden;
+}
+
+/* Стилі для елементів на доріжках */
+.track-content > div {
+  @apply min-w-0;
+  min-width: 4px; /* Мінімальна ширина для маленьких елементів */
+}
+
+.track-content > div:hover {
+  @apply transform scale-105 z-10;
+}
+
+.track-content > div:hover::after {
+  content: '';
+  @apply absolute inset-0 border-2 border-white rounded;
+}
+
+/* Анімації для доріжок */
+.track {
+  animation: trackFadeIn 0.3s ease-out;
+}
+
+@keyframes trackFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Поліпшення для маленьких елементів */
+.track-content .text-xs {
+  @apply leading-none;
+  font-size: 10px;
+}
+
+/* Hover ефекти для доріжок */
+.track-content:hover {
+  @apply bg-gray-50;
+}
+
+/* Стилі для різних типів елементів */
+.track-content .bg-blue-500 {
+  @apply shadow-blue-200;
+}
+
+.track-content .bg-green-500 {
+  @apply shadow-green-200;
+}
+
+.track-content .bg-purple-500 {
+  @apply shadow-purple-200;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .track-header span {
+    @apply text-xs;
+  }
+
+  .track-content {
+    @apply h-6;
+  }
+
+  .track-content > div {
+    @apply h-4 top-1;
+  }
+}

@@ -30,6 +30,8 @@ export interface SubtitleStyle {
   backgroundColor: string;
   backgroundOpacity: number;
   textColor: string;
+  position: 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right' | 'center';
+  backgroundStyle: 'adaptive' | 'full-width' | 'none';
 }
 
 export interface Watermark {
