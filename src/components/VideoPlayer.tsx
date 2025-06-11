@@ -25,6 +25,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                                                           subtitles,
                                                           watermarks,
                                                           disclaimers,
+                                                          previewSubtitle,
                                                           onTimeUpdate,
                                                           onPlay,
                                                           onPause,
@@ -175,6 +176,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   currentTime={timeline.currentTime}
                   videoWidth={video.width}
                   videoHeight={video.height}
+                  previewSubtitle={previewSubtitle}
               />
           )}
 

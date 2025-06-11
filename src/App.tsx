@@ -4,9 +4,10 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { Timeline } from './components/Timeline';
 import { Sidebar } from './components/Sidebar';
 import { ProjectLoader } from './components/ProjectLoader';
+import { ExportModal } from './components/ExportModal';
 import { VideoFile, TimelineState, ProjectState, Subtitle, Watermark, Disclaimer } from './types/video-types';
 import { saveProject, loadProject, clearProject, hasProject } from './utils/project-storage';
-import { AlertCircle, X, Video, ArrowLeft, Save, Check } from 'lucide-react';
+import { AlertCircle, X, Video, ArrowLeft, Save, Check, Download } from 'lucide-react';
 
 // Компонент для відображення помилок
 const ErrorMessage: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => (
@@ -50,6 +51,9 @@ function App() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showProjectLoader, setShowProjectLoader] = useState(false);
+
+  // Стан експорту
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Перевіряємо наявність збереженого проекту при завантаженні
   useEffect(() => {
@@ -314,6 +318,18 @@ function App() {
     }
   }, [project, hasUnsavedChanges]);
 
+  // Функція відкриття експорту
+  const handleOpenExport = useCallback(() => {
+    setShowExportModal(true);
+  }, []);
+
+  // Перевірка чи можна експортувати
+  const canExport = project.video && (
+      project.subtitles.length > 0 ||
+      project.watermarks.length > 0 ||
+      project.disclaimers.length > 0
+  );
+
   return (
       <div className="h-screen bg-gray-100 flex flex-col">
         {!project.video ? (
@@ -342,7 +358,7 @@ function App() {
         ) : (
             /* Етап редагування - трьохколонковий layout */
             <div className="flex-1 flex flex-col">
-              {/* Заголовок з кнопкою повернення та збереженням */}
+              {/* Заголовок з кнопкою повернення та кнопками управління */}
               <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
                 <button
                     onClick={handleBackToUpload}
@@ -361,35 +377,53 @@ function App() {
                   )}
                 </div>
 
-                {/* Кнопка збереження */}
-                <button
-                    onClick={handleSaveProject}
-                    disabled={!project.video || saveStatus === 'saving'}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        saveStatus === 'saved'
-                            ? 'bg-green-100 text-green-700'
-                            : hasUnsavedChanges
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                : 'bg-gray-100 text-gray-500'
-                    }`}
-                >
-                  {saveStatus === 'saving' ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Збереження...</span>
-                      </>
-                  ) : saveStatus === 'saved' ? (
-                      <>
-                        <Check className="h-4 w-4" />
-                        <span>Збережено</span>
-                      </>
-                  ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        <span>Зберегти</span>
-                      </>
-                  )}
-                </button>
+                {/* Кнопки управління */}
+                <div className="flex items-center space-x-3">
+                  {/* Кнопка збереження */}
+                  <button
+                      onClick={handleSaveProject}
+                      disabled={!project.video || saveStatus === 'saving'}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          saveStatus === 'saved'
+                              ? 'bg-green-100 text-green-700'
+                              : hasUnsavedChanges
+                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                  : 'bg-gray-100 text-gray-500'
+                      }`}
+                  >
+                    {saveStatus === 'saving' ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Збереження...</span>
+                        </>
+                    ) : saveStatus === 'saved' ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          <span>Збережено</span>
+                        </>
+                    ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          <span>Зберегти</span>
+                        </>
+                    )}
+                  </button>
+
+                  {/* Кнопка експорту */}
+                  <button
+                      onClick={handleOpenExport}
+                      disabled={!canExport}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          canExport
+                              ? 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg'
+                              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                      title={!canExport ? 'Додайте хоча б один елемент для експорту' : 'Експортувати відео'}
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Експорт</span>
+                  </button>
+                </div>
               </div>
 
               {/* Основний контент */}
@@ -461,6 +495,18 @@ function App() {
                   setShowProjectLoader(false);
                   clearProject();
                 }}
+            />
+        )}
+
+        {/* Модальне вікно експорту */}
+        {showExportModal && project.video && (
+            <ExportModal
+                video={project.video}
+                subtitles={project.subtitles}
+                watermarks={project.watermarks}
+                disclaimers={project.disclaimers}
+                onClose={() => setShowExportModal(false)}
+                onError={handleError}
             />
         )}
 

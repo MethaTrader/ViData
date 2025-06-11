@@ -1,3 +1,4 @@
+// src/types/video-types.ts
 // Типи для роботи з відео файлами та медіа контентом
 
 export interface VideoFile {
@@ -30,26 +31,30 @@ export interface SubtitleStyle {
   backgroundColor: string;
   backgroundOpacity: number;
   textColor: string;
-  position: 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right' | 'center';
+  position: 'bottom-center' | 'bottom-left' | 'bottom-right' | 'top-center' | 'top-left' | 'top-right' | 'center' | 'custom';
   backgroundStyle: 'adaptive' | 'full-width' | 'none';
+  customX?: number;
+  customY?: number;
 }
 
 export interface Watermark {
   id: string;
   file: File;
   url: string;
-  position: WatermarkPosition;
+  position: WatermarkPosition | 'custom';
   scale: number;
   startTime: number;
   endTime: number;
+  customX?: number;
+  customY?: number;
 }
 
-export type WatermarkPosition = 
-  | 'top-left' 
-  | 'top-right' 
-  | 'bottom-left' 
-  | 'bottom-right' 
-  | 'center';
+export type WatermarkPosition =
+    | 'top-left'
+    | 'top-right'
+    | 'bottom-left'
+    | 'bottom-right'
+    | 'center';
 
 export interface Disclaimer {
   id: string;
